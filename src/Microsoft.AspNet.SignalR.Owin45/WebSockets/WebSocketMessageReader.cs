@@ -11,6 +11,8 @@ namespace Microsoft.AspNet.SignalR.WebSockets
 {
     internal static class WebSocketMessageReader
     {
+        private static readonly ArraySegment<byte> _emptyArraySegment = new ArraySegment<byte>(new byte[0]);
+
         private static byte[] BufferSliceToByteArray(byte[] buffer, int count)
         {
             byte[] newArray = new byte[count];
@@ -23,30 +25,10 @@ namespace Microsoft.AspNet.SignalR.WebSockets
             return Encoding.UTF8.GetString(buffer, 0, count);
         }
 
-        public static async Task<WebSocketMessage> ReadMessageAsync(WebSocket webSocket, byte[] buffer, int maxMessageSize, CancellationToken disconnectToken)
+        public static async Task<WebSocketMessage> ReadMessageAsync(WebSocket webSocket, Lazy<byte[]> lazyBuffer, int maxMessageSize, CancellationToken disconnectToken)
         {
-            var arraySegment = new ArraySegment<byte>(buffer);
-            WebSocketReceiveResult receiveResult = null;
-
-            try
-            {
-                receiveResult = await webSocket.ReceiveAsync(arraySegment, disconnectToken).ConfigureAwait(continueOnCapturedContext: false);
-            }
-            catch (Exception)
-            {
-                // If the websocket is aborted while we're reading then just rethrow
-                // an operaton cancelled exception so the caller can handle it
-                // appropriately
-                if (webSocket.State == WebSocketState.Aborted)
-                {
-                    throw new OperationCanceledException();
-                }
-                else
-                {
-                    // Otherwise rethrow the original exception
-                    throw;
-                }
-            }
+            // Read the first time with an empty array
+            WebSocketReceiveResult receiveResult = await ReceiveAsync(webSocket, _emptyArraySegment, disconnectToken);
 
             // special-case close messages since they might not have the EOF flag set
             if (receiveResult.MessageType == WebSocketMessageType.Close)
@@ -54,9 +36,15 @@ namespace Microsoft.AspNet.SignalR.WebSockets
                 return new WebSocketMessage(null, WebSocketMessageType.Close);
             }
 
+            // Now read with the real buffer (allocate lazily)
+            var buffer = lazyBuffer.Value;
+            var arraySegment = new ArraySegment<byte>(buffer);
+
+            // Check the receive result (this should finish immediately)
+            receiveResult = await ReceiveAsync(webSocket, arraySegment, disconnectToken);
+
             if (receiveResult.EndOfMessage)
             {
-                // we anticipate that single-fragment messages will be common, so we optimize for them
                 switch (receiveResult.MessageType)
                 {
                     case WebSocketMessageType.Binary:
@@ -72,8 +60,7 @@ namespace Microsoft.AspNet.SignalR.WebSockets
             else
             {
                 // for multi-fragment messages, we need to coalesce
-                ByteBuffer bytebuffer = new ByteBuffer(maxMessageSize);
-                bytebuffer.Append(BufferSliceToByteArray(buffer, receiveResult.Count));
+                var bytebuffer = new ByteBuffer(maxMessageSize);
                 WebSocketMessageType originalMessageType = receiveResult.MessageType;
 
                 while (true)
@@ -104,5 +91,27 @@ namespace Microsoft.AspNet.SignalR.WebSockets
             }
         }
 
+        private static async Task<WebSocketReceiveResult> ReceiveAsync(WebSocket webSocket, ArraySegment<byte> buffer, CancellationToken disconnectToken)
+        {
+            try
+            {
+                return await webSocket.ReceiveAsync(buffer, disconnectToken).ConfigureAwait(continueOnCapturedContext: false);
+            }
+            catch (Exception)
+            {
+                // If the websocket is aborted while we're reading then just rethrow
+                // an operaton cancelled exception so the caller can handle it
+                // appropriately
+                if (webSocket.State == WebSocketState.Aborted)
+                {
+                    throw new OperationCanceledException();
+                }
+                else
+                {
+                    // Otherwise rethrow the original exception
+                    throw;
+                }
+            }
+        }
     }
 }

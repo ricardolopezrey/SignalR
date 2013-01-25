@@ -14,7 +14,7 @@ namespace Microsoft.AspNet.SignalR.WebSockets
     public class WebSocketHandler
     {
         private static readonly TimeSpan _closeTimeout = TimeSpan.FromMilliseconds(250); // wait 250 ms before giving up on a Close
-        private const int _receiveLoopBufferSize = 8 * 1024; // 8K default fragment size (we expect most messages to be very short)
+        private const int _receiveLoopBufferSize = 4 * 1024; // 4K default fragment size (we expect most messages to be very short)
 
         private int _maxIncomingMessageSize = 4 * 1024 * 1024; // 4MB default max incoming message size
         private readonly TaskQueue _sendQueue = new TaskQueue(); // queue for sending messages
@@ -153,7 +153,7 @@ namespace Microsoft.AspNet.SignalR.WebSockets
                 throw new ArgumentNullException("webSocket");
             }
 
-            byte[] buffer = new byte[_receiveLoopBufferSize];
+            var buffer = new Lazy<byte[]>(() => new byte[_receiveLoopBufferSize]);
             return ProcessWebSocketRequestAsync(webSocket, disconnectToken, () => WebSocketMessageReader.ReadMessageAsync(webSocket, buffer, MaxIncomingMessageSize, disconnectToken));
         }
 
@@ -195,12 +195,7 @@ namespace Microsoft.AspNet.SignalR.WebSockets
             }
             catch (OperationCanceledException ex)
             {
-                if (!ex.CancellationToken.IsCancellationRequested)
-                {
-                    Error = ex;
-                    OnError();
-                    cleanClose = false;
-                }
+                cleanClose = OnOperationCancelledException(ex);
             }
             catch (Exception ex)
             {
@@ -228,6 +223,11 @@ namespace Microsoft.AspNet.SignalR.WebSockets
                     }
                 }
             }
+        }
+
+        protected virtual bool OnOperationCancelledException(OperationCanceledException ex)
+        {
+            return true;
         }
 
         // returns true if this is a fatal exception (e.g. OnError should be called)

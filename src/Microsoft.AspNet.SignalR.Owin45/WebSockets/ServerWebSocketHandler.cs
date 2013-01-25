@@ -6,7 +6,7 @@ using Microsoft.AspNet.SignalR.Hosting;
 
 namespace Microsoft.AspNet.SignalR.WebSockets
 {
-    internal class DefaultWebSocketHandler : WebSocketHandler, IWebSocket
+    internal class ServerWebSocketHandler : WebSocketHandler, IWebSocket
     {
         private volatile bool _raiseEvent = true;
 
@@ -75,6 +75,18 @@ namespace Microsoft.AspNet.SignalR.WebSockets
         Task IWebSocket.Send(string value)
         {
             return Send(value);
+        }
+
+        protected override bool OnOperationCancelledException(OperationCanceledException ex)
+        {
+            if (!ex.CancellationToken.IsCancellationRequested)
+            {
+                Error = ex;
+                OnError();
+                return false;
+            }
+
+            return true;
         }
     }
 }
