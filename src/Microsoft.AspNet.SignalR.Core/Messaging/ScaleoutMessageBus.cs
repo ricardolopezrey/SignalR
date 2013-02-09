@@ -38,6 +38,12 @@ namespace Microsoft.AspNet.SignalR.Messaging
         /// <returns></returns>
         protected virtual Task Send(IList<Message> messages)
         {
+            // If we're only using a single stream then just send
+            if (StreamCount == 1)
+            {
+                return Send(0, messages);
+            }
+
             var taskCompletionSource = new TaskCompletionSource<object>();
 
             // Group messages by source (connection id)
