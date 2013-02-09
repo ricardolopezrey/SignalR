@@ -109,6 +109,8 @@ namespace Microsoft.AspNet.SignalR.Messaging
         [SuppressMessage("Microsoft.Design", "CA1062:Validate arguments of public methods", MessageId = "0", Justification = "Called from derived class")]
         protected Task OnReceived(string streamId, ulong id, IList<Message> messages)
         {
+            Trace.TraceInformation("OnReceived({0}, {1}, {2})", streamId, id, messages.Count);
+
             // Create a local dictionary for this payload
             var dictionary = new ConcurrentDictionary<string, LocalEventKeyInfo>();
 

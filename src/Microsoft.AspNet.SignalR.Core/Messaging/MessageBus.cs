@@ -107,7 +107,7 @@ namespace Microsoft.AspNet.SignalR.Messaging
             _stringMinifier = stringMinifier;
             _traceManager = traceManager;
             Counters = performanceCounterManager;
-            _trace = _traceManager["SignalR.MessageBus"];
+            _trace = _traceManager["SignalR." + GetType().Name];
             _maxTopicsWithNoSubscriptions = maxTopicsWithNoSubscriptions;
 
             _gcTimer = new Timer(_ => GarbageCollectTopics(), state: null, dueTime: _gcInterval, period: _gcInterval);
@@ -125,7 +125,7 @@ namespace Microsoft.AspNet.SignalR.Messaging
             Topics = new TopicLookup();
         }
 
-        private TraceSource Trace
+        protected TraceSource Trace
         {
             get
             {
