@@ -74,6 +74,7 @@
     <Compile Include="..\Microsoft.AspNet.SignalR.Core\TaskAsyncHelper.cs">
       <Link>Infrastructure\TaskAsyncHelper.cs</Link>
     </Compile>
+    <Compile Include="DependencyResolverExtensions.cs" />
     <Compile Include="FastMessageSerializer.cs" />
     <Compile Include="Infrastructure\ServiceBusTaskExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
