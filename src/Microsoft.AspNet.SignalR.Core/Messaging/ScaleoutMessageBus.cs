@@ -55,6 +55,8 @@ namespace Microsoft.AspNet.SignalR.Messaging
 
         private void SendImpl(IEnumerator<IGrouping<string, Message>> enumerator, TaskCompletionSource<object> taskCompletionSource)
         {
+        send:
+
             if (!enumerator.MoveNext())
             {
                 taskCompletionSource.TrySetResult(null);
@@ -66,9 +68,27 @@ namespace Microsoft.AspNet.SignalR.Messaging
                 // Get the channel index we're going to use for this message
                 int index = _sipHashBasedComparer.GetHashCode(group.Key) % StreamCount;
 
-                // Increment the channel number
-                Send(index, group.ToArray()).Then((enumer, tcs) => SendImpl(enumer, tcs), enumerator, taskCompletionSource)
-                                            .ContinueWithNotComplete(taskCompletionSource);
+                Task sendTask = Send(index, group.ToArray()).Catch();
+
+                if (sendTask.IsCompleted)
+                {
+                    try
+                    {
+                        sendTask.Wait();
+
+                        goto send;
+
+                    }
+                    catch (Exception ex)
+                    {
+                        taskCompletionSource.SetUnwrappedException(ex);
+                    }
+                }
+                else
+                {
+                    sendTask.Then((enumer, tcs) => SendImpl(enumer, tcs), enumerator, taskCompletionSource)
+                            .ContinueWithNotComplete(taskCompletionSource);
+                }
             }
         }
 
