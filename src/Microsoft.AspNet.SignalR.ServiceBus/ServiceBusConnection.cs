@@ -114,12 +114,14 @@ namespace Microsoft.AspNet.SignalR.ServiceBus
                         return;
                     }
 
-                    if (ContinueReceiving(ar, topicPath, receiver, handler))
+                    var state = (ReceiveState)ar.AsyncState;
+
+                    if (ContinueReceiving(ar, state.TopicPath, state.Receiver, state.Handler))
                     {
-                        PumpMessages(topicPath, receiver, handler);
+                        PumpMessages(state.TopicPath, state.Receiver, state.Handler);
                     }
                 },
-                null);
+                new ReceiveState(topicPath, receiver, handler));
             }
             catch (OperationCanceledException)
             {
@@ -129,7 +131,7 @@ namespace Microsoft.AspNet.SignalR.ServiceBus
 
             if (result.CompletedSynchronously)
             {
-                if(ContinueReceiving(result, topicPath, receiver, handler))
+                if (ContinueReceiving(result, topicPath, receiver, handler))
                 {
                     goto receive;
                 }
@@ -178,6 +180,20 @@ namespace Microsoft.AspNet.SignalR.ServiceBus
             public string TopicPath { get; private set; }
             public string Name { get; private set; }
             public MessageReceiver Receiver { get; private set; }
+        }
+
+        private class ReceiveState
+        {
+            public ReceiveState(string topicPath, MessageReceiver receiver, Action<string, IEnumerable<BrokeredMessage>> handler)
+            {
+                TopicPath = topicPath;
+                Receiver = receiver;
+                Handler = handler;
+            }
+
+            public string TopicPath { get; private set; }
+            public MessageReceiver Receiver { get; private set; }
+            public Action<string, IEnumerable<BrokeredMessage>> Handler { get; private set; }
         }
     }
 }
