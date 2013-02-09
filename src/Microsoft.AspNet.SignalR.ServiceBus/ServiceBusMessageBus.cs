@@ -40,7 +40,7 @@ namespace Microsoft.AspNet.SignalR.ServiceBus
         {
             string topic = _topics[streamIndex];
 
-            Stream stream = FastMessageSerializer.GetStream(messages);
+            var stream = ServiceBusMessage.ToStream(messages);
 
             return _connection.Publish(topic, stream);
         }
@@ -51,7 +51,7 @@ namespace Microsoft.AspNet.SignalR.ServiceBus
             {
                 using (message)
                 {
-                    var internalMessages = FastMessageSerializer.GetMessages(message.GetBody<Stream>());
+                    IList<Message> internalMessages = ServiceBusMessage.FromStream(message.GetBody<Stream>());
 
                     OnReceived(topicName, (ulong)message.SequenceNumber, internalMessages);
                 }

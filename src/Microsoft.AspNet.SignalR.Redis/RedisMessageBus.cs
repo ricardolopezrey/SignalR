@@ -19,8 +19,6 @@ namespace Microsoft.AspNet.SignalR.Redis
         private RedisSubscriberConnection _channel;
         private Task _connectTask;
 
-        private readonly TaskQueue _publishQueue = new TaskQueue();
-
         public RedisMessageBus(string server, int port, string password, int db, IEnumerable<string> keys, IDependencyResolver resolver)
             : base(resolver)
         {
@@ -71,9 +69,9 @@ namespace Microsoft.AspNet.SignalR.Redis
             return _connection.Strings.Increment(_db, key)
                                .Then((id, k) =>
                                {
-                                   var message = new RedisMessage(id, messages.ToArray());
+                                   byte[] data = RedisMessage.ToBytes(id, messages);
 
-                                   return _connection.Publish(k, message.GetBytes());
+                                   return _connection.Publish(k, data);
                                }, key);
         }
 
@@ -90,9 +88,9 @@ namespace Microsoft.AspNet.SignalR.Redis
         private void OnMessage(string key, byte[] data)
         {
             // The key is the stream id (channel)
-            var message = RedisMessage.Deserialize(data);
+            var message = RedisMessage.FromBytes(data);
 
-            _publishQueue.Enqueue(() => OnReceived(key, (ulong)message.Id, message.Messages));
+            OnReceived(key, (ulong)message.Id, message.Messages);
         }
 
         protected override void Dispose(bool disposing)
