@@ -3,7 +3,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNet.SignalR.Infrastructure;
@@ -136,7 +138,12 @@ namespace Microsoft.AspNet.SignalR.Messaging
             var stream = _streams.GetOrAdd(streamId, _ => new IndexedDictionary<ulong, ScaleoutMapping>());
 
             // Publish only after we've setup the mapping fully
-            stream.Add(id, mapping);
+            if (!stream.TryAdd(id, mapping))
+            {
+                Trace.TraceEvent(TraceEventType.Error, 0, Resources.Error_DuplicatePayloadsForStream, streamId);
+
+                throw new InvalidOperationException(String.Format(CultureInfo.CurrentCulture, Resources.Error_DuplicatePayloadsForStream, streamId));
+            }
 
             // Schedule after we're done
             foreach (var eventKey in dictionary.Keys)
