@@ -14,7 +14,7 @@ namespace Microsoft.AspNet.SignalR.Redis
     {
         private static readonly JsonSerializer _serializer = GetSerializer();
 
-        private RedisMessage(long id, IList<Message> messages)
+        public RedisMessage(long id, IList<Message> messages)
         {
             Id = id;
             Messages = messages;
