@@ -20,8 +20,10 @@ namespace Microsoft.AspNet.SignalR.Redis
             Messages = messages;
         }
 
+        [JsonProperty("I")]
         public long Id { get; set; }
 
+        [JsonProperty("M")]
         [SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly", Justification = "Type is used for serialization")]
         public IList<Message> Messages { get; set; }
 
@@ -49,6 +51,7 @@ namespace Microsoft.AspNet.SignalR.Redis
             var settings = new JsonSerializerSettings
             {
                 NullValueHandling = NullValueHandling.Ignore,
+                DefaultValueHandling = DefaultValueHandling.Ignore,
                 MaxDepth = 20
             };
 

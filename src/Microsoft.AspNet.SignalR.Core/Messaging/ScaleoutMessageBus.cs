@@ -61,6 +61,7 @@ namespace Microsoft.AspNet.SignalR.Messaging
             throw new NotImplementedException();
         }
 
+        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "We return a faulted tcs")]
         private void SendImpl(IEnumerator<IGrouping<string, Message>> enumerator, TaskCompletionSource<object> taskCompletionSource)
         {
         send:

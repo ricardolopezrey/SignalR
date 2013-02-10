@@ -39,6 +39,7 @@ namespace Microsoft.AspNet.SignalR.ServiceBus
             var settings = new JsonSerializerSettings
             {
                 NullValueHandling = NullValueHandling.Ignore,
+                DefaultValueHandling = DefaultValueHandling.Ignore,
                 MaxDepth = 20
             };
 

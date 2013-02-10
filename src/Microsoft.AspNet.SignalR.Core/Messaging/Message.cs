@@ -2,22 +2,35 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using Newtonsoft.Json;
 
 namespace Microsoft.AspNet.SignalR.Messaging
 {
     [Serializable]
     public class Message
     {
-        // Core properties
+        [JsonProperty("S")]
         public string Source { get; set; }
+        
+        [JsonProperty("K")]
         public string Key { get; set; }
+        
+        [JsonProperty("V")]
         public string Value { get; set; }
 
+        [JsonProperty("C")]
         public string CommandId { get; set; }
+        
+        [JsonProperty("W")]
         public bool WaitForAck { get; set; }
+        
+        [JsonProperty("A")]
         public bool IsAck { get; set; }
+
+        [JsonProperty("F")]
         public string Filter { get; set; }
 
+        [JsonIgnore]
         public bool IsCommand
         {
             get
