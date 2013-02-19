@@ -114,7 +114,7 @@ namespace Microsoft.AspNet.SignalR
             {
                 task.ContinueWith(innerTask =>
                 {
-#if !WINDOWS_PHONE && !SILVERLIGHT && !NETFX_CORE
+#if !WINDOWS_PHONE && !SILVERLIGHT && !NETFX_CORE && !__ANDROID__ && !IOS
                     // observe Exception
                     var ex = innerTask.Exception;
                     Trace.TraceError("SignalR exception thrown by Task: {0}", ex);
@@ -150,7 +150,7 @@ namespace Microsoft.AspNet.SignalR
                 {
                     var ex = innerTask.Exception;
                     // observe Exception
-#if !WINDOWS_PHONE && !SILVERLIGHT && !NETFX_CORE
+#if !WINDOWS_PHONE && !SILVERLIGHT && !NETFX_CORE && !__ANDROID__ && !IOS
                     Trace.TraceError("SignalR exception thrown by Task: {0}", ex);
 #endif
                     handler(ex, state);
